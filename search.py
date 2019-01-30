@@ -34,7 +34,6 @@ def search(maze, searchMethod):
 
 
 def bfs(maze):
-    # TODO: Write your code here
     # return path, num_states_explored
     num_states_explored = 0
     frontier = deque([maze.getStart()])
@@ -42,10 +41,10 @@ def bfs(maze):
 
     current = maze.getStart()
     while len(frontier) != 0:
-        if maze.isObjective(current):
+        if maze.isObjective(current[0], current[1]):
             break
         current = frontier.popleft()
-        neighbors = maze.getNeighbors(current)
+        neighbors = maze.getNeighbors(current[0], current[1])
         for neighbor in neighbors:
             if neighbor not in backtrack:       # make sure only add unexplored nodes
                 backtrack[neighbor] = current
@@ -56,13 +55,32 @@ def bfs(maze):
         path.append(current)
         current = backtrack[current]
 
-    return path, len(backtrack)
+    return path[::-1], len(backtrack)
 
 
 def dfs(maze):
-    # TODO: Write your code here
     # return path, num_states_explored
-    return [], 0
+    frontier = [maze.getStart()]
+    backtrack = {maze.getStart() : (-1, -1)}
+
+    current = maze.getStart()
+    while len(frontier) != 0:
+        if maze.isObjective(current[0], current[1]):
+            break
+        current = frontier.pop()
+        neighbors = maze.getNeighbors(current[0], current[1])
+        for neighbor in neighbors:
+            if neighbor not in backtrack:       # make sure only add unexplored nodes
+                backtrack[neighbor] = current
+                frontier.append(neighbor)
+
+    path = []
+    while current != (-1, -1):
+        path.append(current)
+        current = backtrack[current]
+
+
+    return path[::-1], len(backtrack)
 
 
 def greedy(maze):
