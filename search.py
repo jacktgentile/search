@@ -22,6 +22,8 @@ files and classes when code is run, so be careful to not modify anything else.
 # maze is a Maze object based on the maze from the file specified by input filename
 # searchMethod is the search method specified by --method flag (bfs,dfs,greedy,astar)
 
+from collections import deque
+
 def search(maze, searchMethod):
     return {
         "bfs": bfs,
@@ -34,7 +36,27 @@ def search(maze, searchMethod):
 def bfs(maze):
     # TODO: Write your code here
     # return path, num_states_explored
-    return [], 0
+    num_states_explored = 0
+    frontier = deque([maze.getStart()])
+    backtrack = {maze.getStart() : (-1, -1)}
+
+    current = maze.getStart()
+    while len(frontier) != 0:
+        if maze.isObjective(current):
+            break
+        current = frontier.popleft()
+        neighbors = maze.getNeighbors(current)
+        for neighbor in neighbors:
+            if neighbor not in backtrack:       # make sure only add unexplored nodes
+                backtrack[neighbor] = current
+                frontier.append(neighbor)
+
+    path = []
+    while current != (-1, -1):
+        path.append(current)
+        current = backtrack[current]
+
+    return path, len(backtrack)
 
 
 def dfs(maze):
