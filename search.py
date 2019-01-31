@@ -24,6 +24,12 @@ files and classes when code is run, so be careful to not modify anything else.
 
 from collections import deque
 
+#compute and return the Manhattan distance between two positions
+def manhattan(pos1, pos2):
+    xdist = abs(pos1[0]-pos2[0]);
+    ydist = abs(pos1[1]-pos2[1]);
+    return xdist + ydist
+
 def search(maze, searchMethod):
     return {
         "bfs": bfs,
@@ -33,8 +39,8 @@ def search(maze, searchMethod):
     }.get(searchMethod)(maze)
 
 
+# return path, num_states_explored
 def bfs(maze):
-    # return path, num_states_explored
     num_states_explored = 0
     frontier = deque([maze.getStart()])
     backtrack = {maze.getStart() : (-1, -1)}
@@ -58,8 +64,8 @@ def bfs(maze):
     return path[::-1], len(backtrack)
 
 
+# return path, num_states_explored
 def dfs(maze):
-    # return path, num_states_explored
     frontier = [maze.getStart()]
     backtrack = {maze.getStart() : (-1, -1)}
 
@@ -79,13 +85,11 @@ def dfs(maze):
         path.append(current)
         current = backtrack[current]
 
-
     return path[::-1], len(backtrack)
 
-
+# return path, num_states_explored
 def greedy(maze):
-    # TODO: Write your code here
-    # return path, num_states_explored
+    
     return [], 0
 
 
