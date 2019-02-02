@@ -14,7 +14,6 @@ within this file -- the unrevised staff files will be used for all other
 files and classes when code is run, so be careful to not modify anything else.
 """
 
-
 # Search should return the path and the number of states explored.
 # The path should be a list of tuples in the form (row, col) that correspond
 # to the positions of the path taken by your search algorithm.
@@ -23,6 +22,7 @@ files and classes when code is run, so be careful to not modify anything else.
 # searchMethod is the search method specified by --method flag (bfs,dfs,greedy,astar)
 
 from collections import deque
+import heapq
 
 #compute and return the Manhattan distance between two positions
 def manhattan(pos1, pos2):
@@ -37,7 +37,6 @@ def search(maze, searchMethod):
         "greedy": greedy,
         "astar": astar,
     }.get(searchMethod)(maze)
-
 
 # return path, num_states_explored
 def bfs(maze):
@@ -62,7 +61,6 @@ def bfs(maze):
         current = backtrack[current]
 
     return path[::-1], len(backtrack)
-
 
 # return path, num_states_explored
 def dfs(maze):
@@ -89,8 +87,33 @@ def dfs(maze):
 
 # return path, num_states_explored
 def greedy(maze):
-    
-    return [], 0
+    #use heapq, make frontier a priority queue based on estimated path cost
+    #stores tuple (g+h, [position])
+    frontier = []
+    #backtrack is dictionary, stores position, previous position, and distance along path
+    current = maze.getStart()
+    backtrack = {current : ((-1,-1),0)}
+    #inserts tuple in frontier
+    current_tup = (manhattan(current,maze.getObjectives()[0]), current)
+    heapq.heappush(frontier, (manhattan(current,maze.getObjectives()[0]), current));
+
+    while len(frontier) != 0:
+        if maze.isObjective(current_tup[1][0], current_tup[1][1]):
+            break
+        current_tup = heapq.heappop(frontier)
+        neighbors = maze.getNeighbors(current_tup[1][0], current_tup[1][1])
+        for neighbor in neighbors:
+            if neighbor not in backtrack:       # make sure only add unexplored nodes
+                backtrack[neighbor] = (current_tup[1],backtrack[current_tup[1]][1]+1)
+                heapq.heappush(frontier, (backtrack[neighbor][1]+manhattan(neighbor,maze.getObjectives()[0]),neighbor))
+
+    path = []
+    current = current_tup[1]
+    while current != (-1, -1):
+        path.append(current)
+        current = backtrack[current][0]
+
+    return path[::-1], len(backtrack)
 
 
 def astar(maze):
