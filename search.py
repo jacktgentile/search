@@ -121,6 +121,26 @@ def dfs(maze):
                 if current in objective_list:
                     objective_list.remove(current)
                     break
+                neighbors = maze.getNeighbors(current[0],current[1])
+                for neighbor in neighbors:
+                    if neighbor not in backtrack:
+                        num_states_explored += 1
+                        backtrack[neighbor] = current
+                        frontier.append(neighbor)
+            current_obj = current
+            offset = len(path)
+            while current != (-1, -1):
+                # print("current:" + str(current))
+                path.insert(offset, current)
+                current = backtrack[current]
+            path.pop()
+            current = current_obj
+            frontier = [current]
+            backtrack.clear()
+            backtrack = {current : (-1, -1)}
+        path.append(current)
+        return path, num_states_explored
+
                 
 
 
