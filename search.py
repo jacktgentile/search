@@ -23,6 +23,7 @@ files and classes when code is run, so be careful to not modify anything else.
 
 from collections import deque
 import heapq
+import pdb; pdb.set_trace()
 
 #compute and return the Manhattan distance between two positions
 def manhattan(pos1, pos2):
@@ -40,53 +41,82 @@ def search(maze, searchMethod):
 
 # return path, num_states_explored
 def bfs(maze):
-    num_states_explored = 0
-    frontier = deque([maze.getStart()])
-    backtrack = {maze.getStart() : (-1, -1)}
-
     current = maze.getStart()
-    while len(frontier) != 0:
-        if maze.isObjective(current[0], current[1]):
-            break
-        current = frontier.popleft()
-        neighbors = maze.getNeighbors(current[0], current[1])
-        for neighbor in neighbors:
-            if neighbor not in backtrack:       # make sure only add unexplored nodes
-                backtrack[neighbor] = current
-                frontier.append(neighbor)
+    frontier = deque([current])
+    backtrack = {current : (-1, -1)}
 
-    path = []
-    while current != (-1, -1):
+    if len(maze.getObjectives()) == 1:
+        while len(frontier) != 0:
+            if maze.isObjective(current[0], current[1]):
+                break
+            current = frontier.popleft()
+            neighbors = maze.getNeighbors(current[0], current[1])
+            for neighbor in neighbors:
+                if neighbor not in backtrack:       # make sure only add unexplored nodes
+                    backtrack[neighbor] = current
+                    frontier.append(neighbor)
+        path = []
+        while current != (-1, -1):
+            path.append(current)
+            current = backtrack[current]
+        return path[::-1], len(backtrack)
+    else:
+        objective_list = maze.getObjectives()
+        path = []
+        num_states_explored = 0
+        while len(objective_list) != 0:
+            while len(frontier) != 0:
+                current = frontier.popleft()
+                if current in objective_list:
+                    objective_list.remove(current)
+                    break
+                neighbors = maze.getNeighbors(current[0],current[1])
+                for neighbor in neighbors:
+                    if neighbor not in backtrack:
+                        backtrack[neighbor] = current
+                        num_states_explored += 1
+                        frontier.append(neighbor)
+            offset = len(path)
+            current_obj = current
+            while current != (-1,-1):
+                path.insert(offset,current)
+                current = backtrack[current]
+            path.pop()
+            current = current_obj
+            frontier.clear()
+            backtrack.clear()
+            backtrack[current] = (-1,-1)
         path.append(current)
-        current = backtrack[current]
+        return path, num_states_explored
 
-    return path[::-1], len(backtrack)
 
 # return path, num_states_explored
 def dfs(maze):
     frontier = [maze.getStart()]
     backtrack = {maze.getStart() : (-1, -1)}
 
-    current = maze.getStart()
-    while len(frontier) != 0:
-        if maze.isObjective(current[0], current[1]):
-            break
-        current = frontier.pop()
-        neighbors = maze.getNeighbors(current[0], current[1])
-        for neighbor in neighbors:
-            if neighbor not in backtrack:       # make sure only add unexplored nodes
-                backtrack[neighbor] = current
-                frontier.append(neighbor)
+    if len(maze.getObjectives()) == 1:
+        current = maze.getStart()
+        while len(frontier) != 0:
+            if maze.isObjective(current[0], current[1]):
+                break
+            current = frontier.pop()
+            neighbors = maze.getNeighbors(current[0], current[1])
+            for neighbor in neighbors:
+                if neighbor not in backtrack:       # make sure only add unexplored nodes
+                    backtrack[neighbor] = current
+                    frontier.append(neighbor)
+        path = []
+        while current != (-1, -1):
+            path.append(current)
+            current = backtrack[current]
+        return path[::-1], len(backtrack)
+    #end if
+    return [],0
 
-    path = []
-    while current != (-1, -1):
-        path.append(current)
-        current = backtrack[current]
-
-    return path[::-1], len(backtrack)
 
 # return path, num_states_explored
-def greedy(maze):
+def astar(maze):
     #use heapq, make frontier a priority queue based on estimated path cost
     #stores tuple (g+h, [position])
     frontier = []
@@ -97,26 +127,56 @@ def greedy(maze):
     current_tup = (manhattan(current,maze.getObjectives()[0]), current)
     heapq.heappush(frontier, (manhattan(current,maze.getObjectives()[0]), current));
 
-    while len(frontier) != 0:
-        if maze.isObjective(current_tup[1][0], current_tup[1][1]):
-            break
-        current_tup = heapq.heappop(frontier)
-        neighbors = maze.getNeighbors(current_tup[1][0], current_tup[1][1])
-        for neighbor in neighbors:
-            if neighbor not in backtrack:       # make sure only add unexplored nodes
-                backtrack[neighbor] = (current_tup[1],backtrack[current_tup[1]][1]+1)
-                heapq.heappush(frontier, (backtrack[neighbor][1]+manhattan(neighbor,maze.getObjectives()[0]),neighbor))
+    if len(maze.getObjectives()) == 1:
+        goal = maze.getObjectives()[0]
+        while len(frontier) != 0:
+            if maze.isObjective(current_tup[1][0], current_tup[1][1]):
+                break
+            current_tup = heapq.heappop(frontier)
+            current_pos = current_tup[1]
+            neighbors = maze.getNeighbors(current_pos[0], current_pos[1])
+            for neighbor in neighbors:
+                if neighbor not in backtrack:       # make sure only add unexplored nodes
+                    backtrack[neighbor] = (current_pos, backtrack[current_pos][1]+1)
+                    heapq.heappush(frontier, (backtrack[neighbor][1] + manhattan(neighbor,goal) ,neighbor))
+        path = []
+        current = current_tup[1]
+        while current != (-1, -1):
+            path.append(current)
+            current = backtrack[current][0]
+        return path[::-1], len(backtrack)
+    #end if
+    return [],0
 
-    path = []
-    current = current_tup[1]
-    while current != (-1, -1):
-        path.append(current)
-        current = backtrack[current][0]
+# return path, num_states_explored
+def greedy(maze):
+    #use heapq, make frontier a priority queue based on heuristic function h
+    #stores tuple (h, [position])
+    frontier = []
+    current = maze.getStart()
+    #backtrack is dictionary, stores position, previous position, and distance along path
+    backtrack = {current : (-1,-1)}
+    #inserts tuple in frontier
+    current_tup = (manhattan(current,goal), current)
+    heapq.heappush(frontier, (manhattan(current,goal), current));
 
-    return path[::-1], len(backtrack)
-
-
-def astar(maze):
-    # TODO: Write your code here
-    # return path, num_states_explored
-    return [], 0
+    if len(maze.getObjectives()) == 1:
+        goal = maze.getObjectives()[0]
+        while len(frontier) != 0:
+            if maze.isObjective(current_tup[1][0], current_tup[1][1]):
+                break
+            current_tup = heapq.heappop(frontier)
+            current_pos = current_tup[1]
+            neighbors = maze.getNeighbors(current_pos[0], current_pos[1])
+            for neighbor in neighbors:
+                if neighbor not in backtrack:       # make sure only add unexplored nodes
+                    backtrack[neighbor] = current_pos
+                    heapq.heappush(frontier, (manhattan(neighbor,goal) ,neighbor))
+        path = []
+        current = current_tup[1]
+        while current != (-1, -1):
+            path.append(current)
+            current = backtrack[current]
+        return path[::-1], len(backtrack)
+    #end if
+    return [],0
