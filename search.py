@@ -23,7 +23,7 @@ files and classes when code is run, so be careful to not modify anything else.
 
 from collections import deque
 import heapq
-import pdb; pdb.set_trace()
+#import pdb; pdb.set_trace()
 
 #compute and return the Manhattan distance between two positions
 def manhattan(pos1, pos2):
@@ -83,7 +83,7 @@ def bfs(maze):
                 current = backtrack[current]
             path.pop()
             current = current_obj
-            frontier.clear()
+            frontier = deque([current])
             backtrack.clear()
             backtrack[current] = (-1,-1)
         path.append(current)
@@ -111,8 +111,17 @@ def dfs(maze):
             path.append(current)
             current = backtrack[current]
         return path[::-1], len(backtrack)
-    #end if
-    return [],0
+    else:
+        objective_list = maze.getObjectives()
+        path = []
+        num_states_explored = 0
+        while len(objective_list) != 0:
+            while len(frontier) != 0:
+                current = frontier.pop()
+                if current in objective_list:
+                    objective_list.remove(current)
+                    break
+                
 
 
 # return path, num_states_explored
