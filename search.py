@@ -31,6 +31,15 @@ def manhattan(pos1, pos2):
     ydist = abs(pos1[1]-pos2[1]);
     return xdist + ydist
 
+def min_manhattan(pos, objective_list):
+    min = float("inf")
+    for objective in objective_list:
+        curr_man = manhattan(pos, objective)
+        if curr_man < min:
+            min = curr_man
+    return min
+
+
 def search(maze, searchMethod):
     return {
         "bfs": bfs,
